@@ -19,7 +19,7 @@ podemos manipular a aplicacao.
 entao agora ao inves de BBBB vamos enviar nosso cobicado
 endereco de destino:
 
-da funcao a qual nao dinhamos acesso dentro do programa
+da funcao a qual nao tinhamos acesso dentro do programa
 0x080484c0 = exploit(obtido em 'info functions')
 
 traduzimos o endereco para littleindia(De tras para frente, invertendo a ordem das palavras na frase, mas nao das letras
